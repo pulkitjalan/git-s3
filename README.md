@@ -4,6 +4,8 @@ Git S3
 > Upload your git repo to AWS S3
 
 [![License](http://img.shields.io/badge/license-MIT-brightgreen.svg?style=flat-square)](http://www.opensource.org/licenses/MIT)
+[![Latest Version](http://img.shields.io/packagist/v/pulkitjalan/git-s3.svg?style=flat-square)](https://packagist.org/packages/pulkitjalan/git-s3)
+[![Total Downloads](https://img.shields.io/packagist/dt/pulkitjalan/git-s3.svg?style=flat-square)](https://packagist.org/packages/pulkitjalan/git-s3)
 
 ## Installation
 
@@ -34,3 +36,7 @@ If you want to push it as a zip archive then you can use the `--zip` parameter (
 ```sh
 $ git-s3 push --zip
 ```
+
+## Credits
+
+This package was inspired [schickling/git-s3](https://github.com/schickling/git-s3).
