@@ -29,7 +29,7 @@ Once ready you can upload an application to s3. Make sure the command is run fro
 $ git-s3 upload
 ```
 
-If you want to upload it as a zip archive then you can use the `--zip` parameter. Useful for AWS CodeDeploy. Example:
+If you want to upload it as a zip archive then you can use the `--zip` parameter (useful for AWS CodeDeploy). Example:
 
 ```sh
 $ git-s3 upload --zip
