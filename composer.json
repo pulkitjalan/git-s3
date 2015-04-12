@@ -1,5 +1,5 @@
 {
-    "name": "pulkit/git-s3",
+    "name": "pulkitjalan/git-s3",
     "description": "Upload your git repo to AWS S3",
     "license": "MIT",
     "authors": [

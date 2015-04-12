@@ -15,7 +15,7 @@ $ composer global require pulkit/git-s3:dev-master
 
 ## Usage
 
-After the installation run `git-s3 init` to initialize the config files. All config files will be created in `~/.git-s3` Once initialized you can run `git-s3 edit` to manually edit them.
+After the installation run `git-s3 init` to initialize the config files. All config files will be created in `~/.git-s3`. Once initialized you can run `git-s3 edit` to manually edit them.
 
 There is also an optional `--env` optional parameter that can be used to initialize and upload to separate environments. Example:
 
