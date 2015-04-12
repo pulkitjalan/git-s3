@@ -41,6 +41,7 @@ class CloneCommand extends AbstractCommand
     {
         $s3 = $this->getAws('s3')->registerStreamWrapper();
 
+        // look for repo on s3
         $this->comment('Searching for repo: '.$this->argument('repo'));
         $repo = 's3://'.$this->getConfig()->get('app.bucket').'/'.$this->argument('repo');
         if (!file_exists($repo)) {
@@ -48,23 +49,24 @@ class CloneCommand extends AbstractCommand
             return;
         }
 
+        // look for latest archive
         $files = scandir($repo.'/archives', SCANDIR_SORT_DESCENDING);
         $latestFile = array_get($files, 0);
-
         if (is_null($latestFile)) {
             $this->error('Please push the repository using \'--zip\' first.');
             return;
         }
 
+        // setup output dir
         $dir = getcwd().'/'.$this->argument('repo');
-
         $this->info('Cloning into: '.$dir);
-
         mkdir($dir, 0755, true);
 
+        // download archive
         $this->comment('Downloading archive: '.$latestFile);
         copy($repo.'/archives/'.$latestFile, $dir.'/'.$latestFile);
 
+        // unzip archive
         $zip = new ZipArchive;
         if ($zip->open($dir.'/'.$latestFile) === true) {
             $this->comment('Extracting archive: '.$latestFile);
