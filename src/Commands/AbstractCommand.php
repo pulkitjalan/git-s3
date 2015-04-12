@@ -76,7 +76,7 @@ abstract class AbstractCommand extends Command
     protected function getAwsCredentials()
     {
         $opts = [
-            'region' => $this->getConfig()->get('aws.region'),
+            'region' => $this->getConfig()->get('aws.region', 'us-east-1'),
         ];
 
         if ($this->getConfig()->get('aws.key')) {

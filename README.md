@@ -23,14 +23,14 @@ There is also an optional `--env` optional parameter that can be used to initial
 $ git-s3 init --env development
 ```
 
-Once ready you can upload an application to s3. Make sure the command is run from a valid `git` repository. Example:
+Once ready you can push an application to s3. Make sure the command is run from a valid `git` repository. Example:
 
 ```sh
-$ git-s3 upload
+$ git-s3 push
 ```
 
-If you want to upload it as a zip archive then you can use the `--zip` parameter (useful for AWS CodeDeploy). Example:
+If you want to push it as a zip archive then you can use the `--zip` parameter (useful for AWS CodeDeploy). Example:
 
 ```sh
-$ git-s3 upload --zip
+$ git-s3 push --zip
 ```

@@ -4,20 +4,20 @@ namespace Git\S3\Commands;
 
 use Symfony\Component\Console\Input\InputOption;
 
-class UploadCommand extends AbstractCommand
+class PushCommand extends AbstractCommand
 {
     /**
      * The console command name.
      *
      * @var string
      */
-    protected $name = 'upload';
+    protected $name = 'push';
     /**
      * The console command description.
      *
      * @var string
      */
-    protected $description = 'Upload current git repo to s3';
+    protected $description = 'Push current git repo to s3';
 
     /**
      * Get the console command options.

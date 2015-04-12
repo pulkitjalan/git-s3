@@ -15,10 +15,11 @@ if (!file_exists(HOME)) {
     mkdir(HOME, 0777, true);
 }
 
-$app = new Symfony\Component\Console\Application('Git S3', '0.0.1');
+$app = new Symfony\Component\Console\Application('Git S3', '0.1.0');
 
 $app->add(new Git\S3\Commands\InitCommand);
 $app->add(new Git\S3\Commands\EditCommand);
-$app->add(new Git\S3\Commands\UploadCommand);
+$app->add(new Git\S3\Commands\PushCommand);
+$app->add(new Git\S3\Commands\CloneCommand);
 
 $app->run();
