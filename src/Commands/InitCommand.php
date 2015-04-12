@@ -2,7 +2,7 @@
 
 namespace Git\S3\Commands;
 
-class Init extends AbstractCommand
+class InitCommand extends AbstractCommand
 {
     /**
      * The console command name.
@@ -45,9 +45,9 @@ class Init extends AbstractCommand
     /**
      * Ask user and set in config
      *
-     * @param string $question
-     * @param string $key
-     * @param string|null $default
+     * @param  string      $question
+     * @param  string      $key
+     * @param  string|null $default
      * @return void
      */
     protected function askAndSet($question, $key, $default = null)
@@ -58,7 +58,7 @@ class Init extends AbstractCommand
 
         // ask user the question
         $value = $this->ask($question.($existing ? ' (Default: '.$existing.')' : '').': ', $existing);
-        
+
         // set config and write file
         $this->getConfig()->set($key, $value);
     }

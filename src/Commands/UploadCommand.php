@@ -3,9 +3,8 @@
 namespace Git\S3\Commands;
 
 use Symfony\Component\Console\Input\InputOption;
-use Guzzle\Batch\BatchBuilder;
 
-class Upload extends AbstractCommand
+class UploadCommand extends AbstractCommand
 {
     /**
      * The console command name.

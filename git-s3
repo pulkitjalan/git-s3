@@ -7,7 +7,6 @@ if (file_exists(__DIR__.'/vendor/autoload.php')) {
     require __DIR__.'/../../autoload.php';
 }
 
-define('SCRIPT_NAME', basename(__FILE__));
 define('HOME', getenv('HOME').'/.git-s3');
 
 // create home dir 
@@ -18,7 +17,8 @@ if (!file_exists(HOME)) {
 
 $app = new Symfony\Component\Console\Application('Git S3', '0.0.1');
 
-$app->add(new Git\S3\Commands\Init);
-$app->add(new Git\S3\Commands\Upload);
+$app->add(new Git\S3\Commands\InitCommand);
+$app->add(new Git\S3\Commands\EditCommand);
+$app->add(new Git\S3\Commands\UploadCommand);
 
 $app->run();
