@@ -4,17 +4,31 @@ namespace Git\S3\Commands;
 
 use Symfony\Component\Console\Input\InputOption;
 use Illuminate\Console\Command;
+use GitWrapper\GitWrapper;
 use Aws\Common\Aws;
 use Git\S3\Config;
 
 abstract class AbstractCommand extends Command
 {
+    /**
+     * @var \Git\S3\Config
+     */
     protected $config;
 
-    public function __construct()
-    {
-        parent::__construct();
-    }
+    /**
+     * @var \Aws\Common\Aws
+     */
+    protected $aws;
+
+    /**
+     * @var \GitWrapper\GitWrapper
+     */
+    protected $git;
+
+    /**
+     * @var \GitWrapper\GitWorkingCopy
+     */
+    protected $repository;
 
     /**
      * Get the console command options.
@@ -38,59 +52,87 @@ abstract class AbstractCommand extends Command
         return $this->option('env') ?: null;
     }
 
+    /**
+     * Get configs for this env
+     *
+     * @param mixed $var
+     * @param mixed $default
+     * @return mixed
+     */
+    protected function getConfig()
+    {
+        if (is_null($this->config)) {
+            $this->config = new Config($this->getEnvironment());
+        }
+
+        return $this->config;
+    }
+
+    /**
+     * Get aws credentials
+     *
+     * @return array
+     */
     protected function getAwsCredentials()
     {
         $opts = [
-            'region' => $this->config->get('aws.region'),
+            'region' => $this->getConfig()->get('aws.region'),
         ];
-        
-        if ($this->config->get('aws.key')) {
-            $opts['key'] = $this->config->get('aws.key');
+
+        if ($this->getConfig()->get('aws.key')) {
+            $opts['key'] = $this->getConfig()->get('aws.key');
         }
 
-        if ($this->config->get('aws.secret')) {
-            $opts['secret'] = $this->config->get('aws.secret');
+        if ($this->getConfig()->get('aws.secret')) {
+            $opts['secret'] = $this->getConfig()->get('aws.secret');
         }
 
         return $opts;
     }
 
+    /**
+     * Get aws object or aws service
+     *
+     * @return mixed
+     */
     protected function getAws($service = null)
     {
-        $aws = Aws::factory($this->getAwsCredentials());
-
-        if (!is_null($service)) {
-            return $aws->get($service);
+        if (is_null($this->aws)) {
+            $this->aws = Aws::factory($this->getAwsCredentials());
         }
 
-        return $aws;
+        if (!is_null($service)) {
+            return $this->aws->get($service);
+        }
+
+        return $this->aws;
     }
 
     /**
-     * Set configs for this env
+     * Get git wrapper object
      *
-     * @return void
+     * @return \GitWrapper\GitWrapper
      */
-    protected function setConfig()
+    protected function getGit()
     {
-        $this->config = new Config($this->getEnvironment());
+        if (is_null($this->git)) {
+            $this->git = new GitWrapper();
+        }
+
+        return $this->git;
     }
 
     /**
-     * Execute the console command.
+     * Get git repository object
      *
-     * @return void
+     * @return \GitWrapper\GitWorkingCopy
      */
-    protected function fire()
+    protected function getRepository()
     {
-        $this->setConfig();
-        $this->process();
-    }
+        if (is_null($this->repository)) {
+            $this->repository = $this->getGit()->workingCopy(getcwd());
+        }
 
-    /**
-     * Execute the console command.
-     *
-     * @return void
-     */
-    abstract protected function process();
+        return $this->repository;
+    }
 }

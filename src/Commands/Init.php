@@ -22,7 +22,7 @@ class Init extends AbstractCommand
      *
      * @return void
      */
-    protected function process()
+    protected function fire()
     {
         $this->configureAws();
 
@@ -53,13 +53,13 @@ class Init extends AbstractCommand
     protected function askAndSet($question, $key, $default = null)
     {
         // check for existing value in key
-        $existing = $this->config->get($key);
+        $existing = $this->getConfig()->get($key);
         $existing = (is_null($existing) ? ((!is_null($default)) ? $default : null) : $existing);
 
         // ask user the question
         $value = $this->ask($question.($existing ? ' (Default: '.$existing.')' : '').': ', $existing);
         
         // set config and write file
-        $this->config->set($key, $value);
+        $this->getConfig()->set($key, $value);
     }
 }

@@ -4,7 +4,6 @@ namespace Git\S3\Commands;
 
 use Symfony\Component\Console\Input\InputOption;
 use Guzzle\Batch\BatchBuilder;
-use GitWrapper\GitWrapper;
 
 class Upload extends AbstractCommand
 {
@@ -20,16 +19,6 @@ class Upload extends AbstractCommand
      * @var string
      */
     protected $description = 'Upload current git repo to s3';
-
-    protected $git;
-    protected $repository;
-
-    public function __construct()
-    {
-        parent::__construct();
-
-        $this->git = new GitWrapper();
-    }
 
     /**
      * Get the console command options.
@@ -48,34 +37,57 @@ class Upload extends AbstractCommand
      *
      * @return void
      */
-    protected function process()
+    protected function fire()
     {
-        $this->repository = $this->git->workingCopy(getcwd());
+        $this->repository = $this->getRepository();
 
         if (!$this->repository->isCloned()) {
             $this->error('Current directory is not a valid git repository!');
+
             return;
         }
 
-        if ($this->option('zip')) {
-            $this->uploadArchive();
-        } else {
-            $this->uploadFiles();
+        try {
+            if ($this->option('zip')) {
+                $result = $this->uploadArchive();
+            } else {
+                $result = $this->uploadFiles();
+            }
+
+            $this->info('Successfully uploaded to '.'s3://'.$this->getConfig()->get('app.bucket').'/'.$result);
+        } catch (\Exception $e) {
+            $this->error('Upload failed!');
+            throw $e;
         }
     }
 
+    /**
+     * Get name of current repo
+     *
+     * @return string
+     */
     protected function getRepoName()
     {
         $dir = $this->repository->getDirectory();
 
-        return basename($dir).'.git';
+        return basename($dir);
     }
 
+    /**
+     * Get current branch name
+     *
+     * @return string
+     */
     protected function getCurrenBranch()
     {
         return trim($this->repository->getBranches()->head());
     }
 
+    /**
+     * Get an array of all files in the current repo
+     *
+     * @return array
+     */
     protected function getAllFiles()
     {
         $files = $this->repository->run(['ls-files', '--full-name'])->getOutput();
@@ -83,8 +95,15 @@ class Upload extends AbstractCommand
         return array_map('trim', explode("\n", $files));
     }
 
+    /**
+     * Create an archive of the current repo
+     *
+     * @return string
+     */
     protected function createArchive()
     {
+        $this->comment('Creating archive');
+
         $branch = $this->getCurrenBranch();
 
         $dir = HOME.'/repos/'.$this->getRepoName().'/';
@@ -99,42 +118,46 @@ class Upload extends AbstractCommand
         return $output;
     }
 
+    /**
+     * Create and upload archive to s3
+     *
+     * @return string
+     */
     protected function uploadArchive()
     {
-        $archive = $this->createArchive();
-        $s3 = $this->getAws('s3');
+        $s3 = $this->getAws('s3')->registerStreamWrapper();
 
-        $s3->putObject([
-            'Bucket' => $this->config->get('app.bucket'),
-            'Key'    => $this->getRepoName().'/archives/'.basename($archive),
-            'Body'   => fopen($archive, 'r+')
-        ]);
+        $source = $this->createArchive();
+        $destination = 's3://'.$this->getConfig()->get('app.bucket').'/'.$this->getRepoName().'/archives/'.basename($source);
 
-        unlink($archive);
+        $this->comment('Uploading archive');
+        copy($source, $destination);
+        unlink($source);
+
+        return $this->getRepoName().'/archives/'.basename($source);
     }
 
+    /**
+     * Upload all repo files to s3
+     *
+     * @return string
+     */
     protected function uploadFiles()
     {
-        $files = $this->getAllFiles();
-        $s3 = $this->getAws('s3');
+        $s3 = $this->getAws('s3')->registerStreamWrapper();
 
-        $batch = BatchBuilder::factory()
-            ->transferCommands(20)
-            ->autoFlushAt(40)
-            ->build();
+        foreach ($this->getAllFiles() as $file) {
+            $source = $this->repository->getDirectory().'/'.$file;
 
-        foreach ($files as $file) {
-            $uploadFile = $this->repository->getDirectory().'/'.$file;
-            
-            if (is_file($uploadFile)) {
-                $batch->add($s3->getCommand('PutObject', [
-                    'Bucket' => $this->config->get('app.bucket'),
-                    'Key'    => $this->getRepoName().'/files/'.$file,
-                    'Body'   => fopen($uploadFile, 'r+')
-                ]));
+            if (is_file($source)) {
+                $this->comment('Uploading file '.$file);
+
+                $destination = 's3://'.$this->getConfig()->get('app.bucket').'/'.$this->getRepoName().'/files/'.$file;
+
+                copy($source, $destination);
             }
         }
 
-        $batch->flush();
+        return $this->getRepoName().'/files';
     }
 }
