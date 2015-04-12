@@ -10,7 +10,7 @@ Git S3
 A global installation of Composer is needed. __git-s3 is installed globally.__
 
 ```sh
-$ composer global require pulkit/git-s3:dev-master
+$ composer global require pulkitjalan/git-s3:dev-master
 ```
 
 ## Usage
