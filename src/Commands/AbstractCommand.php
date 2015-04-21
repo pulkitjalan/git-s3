@@ -3,6 +3,7 @@
 namespace Git\S3\Commands;
 
 use Symfony\Component\Console\Input\InputOption;
+use Illuminate\Filesystem\Filesystem;
 use Illuminate\Console\Command;
 use GitWrapper\GitWrapper;
 use Aws\Common\Aws;
@@ -29,6 +30,11 @@ abstract class AbstractCommand extends Command
      * @var \GitWrapper\GitWorkingCopy
      */
     protected $repository;
+
+    /**
+     * @var \Illuminate\Filesystem\Filesystem
+     */
+    protected $filesystem;
 
     /**
      * Get the console command options.
@@ -134,5 +140,53 @@ abstract class AbstractCommand extends Command
         }
 
         return $this->repository;
+    }
+
+    /**
+     * Get filesystem
+     *
+     * @return \Illuminate\Filesystem\Filesystem
+     */
+    protected function getFilesystem()
+    {
+        if (is_null($this->filesystem)) {
+            $this->filesystem = new Filesystem();
+        }
+
+        return $this->filesystem;
+    }
+
+    /**
+     * Get name of current repo
+     *
+     * @return string
+     */
+    protected function getRepoName()
+    {
+        $dir = $this->repository->getDirectory();
+
+        return basename($dir);
+    }
+
+    /**
+     * Get current branch name
+     *
+     * @return string
+     */
+    protected function getCurrenBranch()
+    {
+        return trim($this->repository->getBranches()->head());
+    }
+
+    /**
+     * Get an array of all files in the current repo
+     *
+     * @return array
+     */
+    protected function getAllFiles()
+    {
+        $files = $this->repository->run(['ls-files', '--full-name'])->getOutput();
+
+        return array_map('trim', explode("\n", $files));
     }
 }

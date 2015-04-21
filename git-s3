@@ -20,6 +20,7 @@ $app = new Symfony\Component\Console\Application('Git S3', '0.1.0');
 $app->add(new Git\S3\Commands\InitCommand);
 $app->add(new Git\S3\Commands\EditCommand);
 $app->add(new Git\S3\Commands\PushCommand);
+$app->add(new Git\S3\Commands\PullCommand);
 $app->add(new Git\S3\Commands\CloneCommand);
 
 $app->run();

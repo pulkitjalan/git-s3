@@ -48,9 +48,9 @@ class PushCommand extends AbstractCommand
 
         try {
             if ($this->option('zip')) {
-                $result = $this->uploadArchive();
+                $result = $this->pushArchive();
             } else {
-                $result = $this->uploadFiles();
+                $result = $this->pushFiles();
             }
 
             $this->info('Successfully uploaded to '.'s3://'.$this->getConfig()->get('app.bucket').'/'.$result);
@@ -61,102 +61,100 @@ class PushCommand extends AbstractCommand
     }
 
     /**
-     * Get name of current repo
-     *
-     * @return string
-     */
-    protected function getRepoName()
-    {
-        $dir = $this->repository->getDirectory();
-
-        return basename($dir);
-    }
-
-    /**
-     * Get current branch name
-     *
-     * @return string
-     */
-    protected function getCurrenBranch()
-    {
-        return trim($this->repository->getBranches()->head());
-    }
-
-    /**
-     * Get an array of all files in the current repo
-     *
-     * @return array
-     */
-    protected function getAllFiles()
-    {
-        $files = $this->repository->run(['ls-files', '--full-name'])->getOutput();
-
-        return array_map('trim', explode("\n", $files));
-    }
-
-    /**
      * Create an archive of the current repo
      *
      * @return string
      */
     protected function createArchive()
     {
-        $this->comment('Creating archive');
-
         $branch = $this->getCurrenBranch();
 
-        $dir = HOME.'/repos/'.$this->getRepoName().'/';
+        $dir = HOME.'/repos/'.$this->getRepoName().'/'.$branch.'/archives/';
 
-        if (!file_exists($dir)) {
-            mkdir($dir, 0755, true);
+        if (!$this->getFilesystem()->exists($dir)) {
+            $this->getFilesystem()->makeDirectory($dir);
         }
 
-        $output = $dir.$branch.'-'.time().'.zip';
+        $output = $dir.time().'.zip';
         $this->repository->archive(['--format=zip', $branch, '--output='.$output]);
 
         return $output;
     }
 
     /**
-     * Create and upload archive to s3
+     * Create and push archive to s3
      *
      * @return string
      */
-    protected function uploadArchive()
+    protected function pushArchive()
     {
-        $s3 = $this->getAws('s3')->registerStreamWrapper();
+        $branch = $this->getCurrenBranch();
 
         $source = $this->createArchive();
-        $destination = 's3://'.$this->getConfig()->get('app.bucket').'/'.$this->getRepoName().'/archives/'.basename($source);
 
-        $this->comment('Uploading archive');
-        copy($source, $destination);
-        unlink($source);
+        // upload to s3
+        $this->sync($source, $this->getConfig()->get('app.bucket'), $this->getRepoName().'/'.$branch.'/archives/'.basename($source));
+
+        // remove local tmp copy
+        $this->getFilesystem()->delete($source);
 
         return $this->getRepoName().'/archives/'.basename($source);
     }
 
     /**
-     * Upload all repo files to s3
+     * Push all repo files to s3
      *
      * @return string
      */
-    protected function uploadFiles()
+    protected function pushFiles()
     {
-        $s3 = $this->getAws('s3')->registerStreamWrapper();
+        $branch = $this->getCurrenBranch();
 
-        foreach ($this->getAllFiles() as $file) {
-            $source = $this->repository->getDirectory().'/'.$file;
+        $dir = HOME.'/repos/'.$this->getRepoName().'/'.$branch.'/files/';
 
-            if (is_file($source)) {
-                $this->comment('Uploading file '.$file);
-
-                $destination = 's3://'.$this->getConfig()->get('app.bucket').'/'.$this->getRepoName().'/files/'.$file;
-
-                copy($source, $destination);
-            }
+        if (!$this->getFilesystem()->exists($dir)) {
+            $this->getFilesystem()->makeDirectory($dir);
         }
 
-        return $this->getRepoName().'/files';
+        foreach ($this->getAllFiles() as $file) {
+            if (empty($file)) {
+                continue;
+            }
+
+            $sourceDir = pathinfo($file, PATHINFO_DIRNAME);
+            if (!$this->getFilesystem()->exists($dir.$sourceDir)) {
+                $this->getFilesystem()->makeDirectory($dir.$sourceDir);
+            }
+
+            $source = $this->repository->getDirectory().'/'.$file;
+            $this->getFilesystem()->copy($source, $dir.$file);
+        }
+
+        $this->sync($dir, $this->getConfig()->get('app.bucket'), $this->getRepoName().'/'.$branch.'/files');
+        $this->getFilesystem()->deleteDirectory($dir);
+
+        return $this->getRepoName().'/'.$branch.'/files';
+    }
+
+    /**
+     * Sync given source files or dir to destination on s3
+     *
+     * @param string $source
+     * @param string $bucket
+     * @param string $keyPrefix
+     * @return void
+     */
+    protected function sync($source, $bucket, $keyPrefix)
+    {
+        $s3 = $this->getAws('s3');
+
+        if ($this->getFilesystem()->isFile($source)) {
+            $s3->registerStreamWrapper();
+            copy($source, 's3://'.$bucket.'/'.$keyPrefix);
+        } else {
+            $s3->uploadDirectory($source, $bucket, $keyPrefix, [
+                'concurrency' => 20,
+            ]);
+        }
     }
 }

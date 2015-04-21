@@ -11,6 +11,7 @@
         "php": ">=5.4.0",
         "illuminate/support": "~4.0",
         "illuminate/console": "~4.0",
+        "illuminate/filesystem": "~4.0",
         "symfony/process": "~2.0",
         "aws/aws-sdk-php": "~2.0",
         "cpliakas/git-wrapper": "~1.0"
